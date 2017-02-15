@@ -47,6 +47,14 @@ class Ui_Dialog(object):
         self.textEdit_fitparam_b = QtWidgets.QTextEdit(self.formLayoutWidget)
         self.textEdit_fitparam_b.setObjectName("textEdit_fitparam_b")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.textEdit_fitparam_b)
+
+        self.label_compound_threshold = QtWidgets.QLabel(self.formLayoutWidget)
+        self.label_compound_threshold.setObjectName("label_compound_threshold")
+        self.formLayout.setWidget(4, QtWidgets.QFormLayout.LabelRole, self.label_compound_threshold)
+        self.textEdit_compound_threshold = QtWidgets.QTextEdit(self.formLayoutWidget)
+        self.textEdit_compound_threshold.setObjectName("textEdit_compound_threshold")
+        self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.textEdit_compound_threshold)
+
         self.buttonBox.raise_()
         self.formLayoutWidget.raise_()
 
@@ -62,4 +70,5 @@ class Ui_Dialog(object):
         self.label_min_pixel.setText(_translate("Dialog", "min-pixel"))
         self.label_fitparam_a.setText(_translate("Dialog", "fitparam-a"))
         self.label_fitparam_b.setText(_translate("Dialog", "fitparam-b"))
+        self.label_compound_threshold.setText(_translate("Dialog", "compound-threshold"))
 

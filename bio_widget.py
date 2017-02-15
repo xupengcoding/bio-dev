@@ -6,6 +6,7 @@ from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 class MyMplCanvas(FigureCanvas):
     """
@@ -13,14 +14,14 @@ class MyMplCanvas(FigureCanvas):
     """
     def __init__(self,parent=None, image_arr=None, dpi=100):
         #fig = Figure(figsize=(width, height), dpi=dpi)
-        fig = Figure()
-        self.axes = fig.add_subplot(111)
+        self.fig = Figure()
+        self.axes = self.fig.add_subplot(111)
         
         self.axes.hold(False)
 
         #self.compute_initial_figure()
         
-        FigureCanvas.__init__(self, fig)
+        FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
         self.mpl_connect('button_press_event', self.onclick)
         

@@ -10,11 +10,13 @@ import bio_tab_ui
 import bio_param_ui
 import numpy as np
 from PIL import Image
+import copy
 import os
 import jpype
 import matplotlib  
 import matplotlib.cm as cm  
 import matplotlib.pyplot as plt
+from scipy import interpolate
 
 class ParamDialog(QDialog, bio_param_ui.Ui_Dialog):
     def __init__(self, parent=None):
@@ -22,12 +24,14 @@ class ParamDialog(QDialog, bio_param_ui.Ui_Dialog):
         self.setupUi(self)
         self.max_pixel = 100000
         self.min_pixel = 0
-        self.fit_a = 1
-        self.fit_b = 0
+        self.fit_a = 1.
+        self.fit_b = 0.
+        self.compound_threshold = 0.
         self.textEdit_max_pixel.setPlainText(str(self.max_pixel))
         self.textEdit_min_pixel.setPlainText(str(self.min_pixel))
         self.textEdit_fitparam_a.setPlainText(str(self.fit_a))
         self.textEdit_fitparam_b.setPlainText(str(self.fit_b))
+        self.textEdit_compound_threshold.setPlainText(str(self.compound_threshold))
         #self.buttonBox.clicked.connect(self.buttonOK)
         self.buttonBox.accepted.connect(self.buttonOK)
         self.buttonBox.rejected.connect(self.buttonCancel)
@@ -36,8 +40,9 @@ class ParamDialog(QDialog, bio_param_ui.Ui_Dialog):
             #print (button)
         self.max_pixel = int(self.textEdit_max_pixel.toPlainText())
         self.min_pixel = int(self.textEdit_min_pixel.toPlainText())
-        self.fit_a = int(self.textEdit_fitparam_a.toPlainText())
-        self.fit_b = int(self.textEdit_fitparam_b.toPlainText())
+        self.fit_a = float(self.textEdit_fitparam_a.toPlainText())
+        self.fit_b = float(self.textEdit_fitparam_b.toPlainText())
+        self.compound_threshold = float(self.textEdit_compound_threshold.toPlainText())
         #self.done(self)
         #print(self.textEdit_fitparam_a.toPlainText())
     def buttonCancel(self):
@@ -45,6 +50,7 @@ class ParamDialog(QDialog, bio_param_ui.Ui_Dialog):
         self.textEdit_min_pixel.setPlainText(str(self.min_pixel))
         self.textEdit_fitparam_a.setPlainText(str(self.fit_a))
         self.textEdit_fitparam_b.setPlainText(str(self.fit_b))
+        self.textEdit_compound_threshold.setPlainText(str(self.compound_threshold))
 
 class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
     def __init__(self, parent=None):
@@ -56,8 +62,11 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
         self.input_image2_path = ""
         self.input_image2_type = ""
         #ndarray to store image, all grayscale
-        self.input_image1 = np.zeros((0))
-        self.input_image2 = np.zeros((0))
+        self.input_image1 = np.zeros((0))#image1 is the background image
+        self.input_image2 = np.zeros((0))#image2 is the fluorescence
+        self.back_image = np.zeros((0))
+        self.fluorescence_image = np.zeros((0))
+        self.compound_rgb = np.zeros((0))
         self.ratio_image = np.zeros((0))
         self.fitted_image = np.zeros((0))
         self.cropped_ratio_image = np.zeros((0))
@@ -78,7 +87,7 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
         #bind signals
         self.actionOpen.triggered.connect(self.Open)
         self.actionFitting_param.triggered.connect(self.paramSet)
-        self.actionPooling.triggered.connect(self.imgPooling)
+        #self.actionPooling.triggered.connect(self.imgPooling)
         self.actionCalc.triggered.connect(self.CalcFittedImage)
         #self.tab_curIdx = self.ImgShowWidget.currentIndex()
         self.ImgShowWidget.tabBarClicked.connect(self.tabBarClicked)
@@ -90,9 +99,16 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
                 #calc ratio image
                 self.ratio_image = self.input_image1 / self.input_image2
                 #draw it
-                self.ratio_image_canvas.axes.imshow(self.ratio_image, cmap=matplotlib.cm.gray)
+                self.ratio_image_canvas.fig.clear()
+                self.ratio_image_canvas.axes = self.ratio_image_canvas.fig.add_subplot(111)
+                ratio_img = self.ratio_image_canvas.axes.imshow(self.ratio_image, cmap=matplotlib.cm.gray)
+                #self.ratio_image_canvas.fig.c
+                self.ratio_image_canvas.fig.colorbar(ratio_img)
                 self.ratio_image_canvas.draw()
                 return
+        if index == 4:
+            if self.input_image1.shape[0] and self.input_image2.shape[0]:
+                self.CalcFlorescenceImage()
 
     def paramSet(self):
         """
@@ -133,7 +149,10 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
             if self.input_image1_type == 'bip (*.bip)':
                 #print("open bip")
                 self.input_image1 = self.img_process.imread_bip(self.input_image1_path)
-                self.image1_canvas.axes.imshow(self.input_image1, cmap=matplotlib.cm.gray)
+                self.image1_canvas.fig.clear()
+                self.image1_canvas.axes = self.image1_canvas.fig.add_subplot(111)
+                img1 = self.image1_canvas.axes.imshow(self.input_image1, cmap=matplotlib.cm.gray)
+                self.image1_canvas.fig.colorbar(img1)
                 self.image1_canvas.draw()
         elif self.ImgShowWidget.currentIndex() == 1:
             #print("open input_img1")
@@ -142,7 +161,10 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
             if self.input_image2_type == 'bip (*.bip)':
                 #print("open bip")
                 self.input_image2 = self.img_process.imread_bip(self.input_image2_path)
-                self.image2_canvas.axes.imshow(self.input_image2, cmap=matplotlib.cm.gray)
+                self.image1_canvas.fig.clear()
+                self.image1_canvas.axes = self.image1_canvas.fig.add_subplot(111)
+                img2 = self.image2_canvas.axes.imshow(self.input_image2, cmap=matplotlib.cm.gray)
+                self.image2_canvas.fig.colorbar(img2)
                 self.image2_canvas.draw()
     def CalcFittedImage(self):
         '''
@@ -159,37 +181,72 @@ class MainWindow(QMainWindow, bio_tab_ui.Ui_MainWindow):
         crop_y = np.clip(ratio_ybound, 0, int(ratio_shape[0])).astype(np.int)
         self.cropped_ratio_image = self.ratio_image[crop_y[0]:crop_y[1], crop_x[0]:crop_x[1]]
         self.fitted_image = (self.cropped_ratio_image-self.param_dialog.fit_b)/self.param_dialog.fit_a
-        print("%f %f"%(np.min(self.fitted_image), np.max(self.fitted_image)))
-        #fit image use must find > 0
-        #region = np.where(self.fitted_image>0)
-        #region_y = [np.min(region[0]), np.max(region[0])]
-        #region_x = [np.min(region[1]), np.max(region[1])] 
-        #self.fitted_image = self.fitted_image[region_y[0]:region_y[1]+1, region_x[0]:region_x[1]+1]
+        #print("%f %f"%(np.min(self.fitted_image), np.max(self.fitted_image)))
         self.fitted_image = np.clip(self.fitted_image, 
                                     self.param_dialog.min_pixel, self.param_dialog.max_pixel)
-        self.fitted_image_canvas.axes.imshow(self.fitted_image, cmap=matplotlib.cm.jet)
+        self.fitted_image_canvas.fig.clear()
+        self.fitted_image_canvas.axes = self.fitted_image_canvas.fig.add_subplot(111)
+        fitted_img = self.fitted_image_canvas.axes.imshow(self.fitted_image, cmap=matplotlib.cm.jet)
+        self.fitted_image_canvas.fig.colorbar(fitted_img)
         self.fitted_image_canvas.draw()
         #self.cropped_ratio_image = self.
+    def CalcFlorescenceImage(self):
         '''
-        if self.ImgShowWidget.currentIndex() == 0:
-            self.input_image1_path = file_name
-            self.input_image1 = Image.open(self.input_image1_path)
-            self.input_image1 = self.input_image1.convert('L')
-            self.input_image1.save(self.tmp_input_image1_path, "png")
-            self.input_image1 = np.array(self.input_image1)
-            self.label_input_image1.setPixmap(QPixmap(self.tmp_input_image1_path))
-            self.label_input_image1.update()
-        elif self.ImgShowWidget.currentIndex() == 1:
-            self.input_image2_path = file_name
-            self.input_image2 = Image.open(self.input_image2_path)
-            self.input_image2 = self.input_image2.convert('L')
-            self.input_image2.save(self.tmp_input_image2_path, "png")
-            self.input_image2 = np.array(self.input_image2)
-            #self.input_image1 = cv2.cvtColor(self.input_image1, cv2.COLOR_RGB2GRAY)
-            #cv2.imwrite(self.tmp_input_image1_path)
-            self.label_input_image2.setPixmap(QPixmap(self.tmp_input_image2_path))
-            self.label_input_image2.update()
+        calc florescenceImage(self):
+        add a param min_val
         '''
+        #resize to bk-image1
+        #image1_shape = self.input_image1.shape
+        #image2_shape = self.input_image2.shape
+        self.back_image = copy.deepcopy(self.input_image1)
+        self.fluorescence_image = copy.deepcopy(self.input_image2)
+        bk_shape = self.back_image.shape
+        fl_shape = self.fluorescence_image.shape
+        print(bk_shape)
+        if bk_shape[0] != fl_shape[0] or bk_shape[1] != fl_shape[1]:
+            #resize
+            y, x = np.mgrid[0:fl_shape[0], 0:fl_shape[1]]
+            fl_interp2d = interpolate(x, y, self.fluorescence_image, kind='slinear')
+            x_new = np.linspace(0, fl_shape[0], bk_shape[0])
+            y_new = np.linspace(0, fl_shape[1], bk_shape[1])
+            self.fluorescence_image = fl_interp2d(x_new, y_new)
+        #process bk-img:input_image1
+        #clip bk-img
+        self.back_image = np.clip(self.back_image, 0, np.max(self.back_image))
+        self.back_image = self.back_image / np.max(self.back_image)
+        self.back_image = self.back_image * 255
+        self.back_image = self.back_image + 1
+        #process fl_image
+        self.fluorescence_image = self.fluorescence_image / np.max(self.fluorescence_image)
+        self.fluorescence_image = self.fluorescence_image * 255
+        #use threshold to filt the fluorescence image
+        self.fluorescence_image = np.where(self.fluorescence_image > self.param_dialog.compound_threshold,
+                                           self.fluorescence_image, np.zeros(fl_shape))
+        self.param_dialog.compound_threshold
+        self.fluorescence_image = self.fluorescence_image + 1
+        #calc rgb
+        bk_rgb = np.zeros((bk_shape[0], bk_shape[1], 3))
+        fl_rgb = np.zeros((bk_shape[0], bk_shape[1], 3))
+        #calc rgb
+        gray_cmap = cm.gray
+        hot_cmap = cm.hot #the matlab code use hot(256) , I think its both ok
+        bk_gray = gray_cmap(self.back_image.astype(np.int))
+        print(np.shape(bk_gray))
+        fl_hot = hot_cmap(self.fluorescence_image.astype(np.int))
+        for rgb_dim in range(3):
+            gray_cmap_rows_for_bk = self.back_image.astype(np.int)
+            hot_cmap_rows_for_fl = self.fluorescence_image.astype(np.int)
+            bk_rgb[:, :, rgb_dim] = bk_gray[:, :, rgb_dim].reshape(bk_shape)
+            fl_rgb[:, :, rgb_dim] = fl_hot[:, :, rgb_dim].reshape(fl_shape)
+        #fusion
+        opacity = 0.5
+        self.compound_rgb = (1-opacity)*bk_rgb+opacity*fl_rgb
+        #draw the compound_rgb
+        self.fluorescence_image_canvas.fig.clear()
+        self.fluorescence_image_canvas.axes = self.fluorescence_image_canvas.fig.add_subplot(111)
+        self.fluorescence_image_canvas.axes.imshow(self.compound_rgb)
+        self.fitted_image_canvas.draw()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
