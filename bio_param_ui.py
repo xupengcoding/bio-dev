@@ -11,14 +11,14 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
-        Dialog.resize(400, 300)
+        Dialog.resize(400, 400)
         self.buttonBox = QtWidgets.QDialogButtonBox(Dialog)
-        self.buttonBox.setGeometry(QtCore.QRect(30, 240, 341, 32))
+        self.buttonBox.setGeometry(QtCore.QRect(30, 250, 341, 32))
         self.buttonBox.setOrientation(QtCore.Qt.Horizontal)
         self.buttonBox.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
         self.buttonBox.setObjectName("buttonBox")
         self.formLayoutWidget = QtWidgets.QWidget(Dialog)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(40, 50, 326, 151))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(40, 50, 326, 200))
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
         self.formLayout.setContentsMargins(0, 0, 0, 0)
@@ -55,6 +55,20 @@ class Ui_Dialog(object):
         self.textEdit_compound_threshold.setObjectName("textEdit_compound_threshold")
         self.formLayout.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.textEdit_compound_threshold)
 
+        self.label_cmap_min = QtWidgets.QLabel(self.formLayoutWidget)
+        self.label_cmap_min.setObjectName("label_cmap_min")
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.label_cmap_min)
+        self.textEdit_cmap_min = QtWidgets.QTextEdit(self.formLayoutWidget)
+        self.textEdit_cmap_min.setObjectName("textEdit_cmap_min")
+        self.formLayout.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.textEdit_cmap_min)
+
+        self.label_cmap_max = QtWidgets.QLabel(self.formLayoutWidget)
+        self.label_cmap_max.setObjectName("label_cmap_max")
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.label_cmap_max)
+        self.textEdit_cmap_max = QtWidgets.QTextEdit(self.formLayoutWidget)
+        self.textEdit_cmap_max.setObjectName("textEdit_cmap_max")
+        self.formLayout.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.textEdit_cmap_max)                
+
         self.buttonBox.raise_()
         self.formLayoutWidget.raise_()
 
@@ -71,4 +85,6 @@ class Ui_Dialog(object):
         self.label_fitparam_a.setText(_translate("Dialog", "fitparam-a"))
         self.label_fitparam_b.setText(_translate("Dialog", "fitparam-b"))
         self.label_compound_threshold.setText(_translate("Dialog", "compound-threshold"))
+        self.label_cmap_min.setText(_translate("Dialog", "colormap min"))
+        self.label_cmap_max.setText(_translate("Dialog", "colormap max"))
 

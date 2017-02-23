@@ -26,7 +26,7 @@ class ImgProcess:
         fp = self.FormatTools.isFloatingPoint(pixelType)
         little = reader.isLittleEndian()
         sgn = self.FormatTools.isSigned(pixelType)
-        print ('%d %d %d'%(width, height, bpp))
+        #print ('%d %d %d'%(width, height, bpp))
         channel = 0
         zplane = 0
         tframe = 0
@@ -37,7 +37,7 @@ class ImgProcess:
         plane = reader.openBytes(index)
         arr = self.DataTools.makeDataArray2D(plane, bpp, fp, little, height)
         arr1 = np.array(arr).astype(np.double)
-        print(arr1.shape)
+        #print(arr1.shape)
         return arr1
 
 def averagePooling(step, image):

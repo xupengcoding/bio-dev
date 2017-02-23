@@ -23,7 +23,7 @@ class MyMplCanvas(FigureCanvas):
         
         FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
-        self.mpl_connect('button_press_event', self.onclick)
+        #self.mpl_connect('button_press_event', self.onclick)
         
         FigureCanvas.setSizePolicy(self,
                                    QSizePolicy.Expanding,
@@ -32,7 +32,7 @@ class MyMplCanvas(FigureCanvas):
 
     def compute_initial_figure(self):
         pass
-
+    
     def onclick(self, event):
         pass
         if event.xdata:

@@ -147,7 +147,7 @@ class Ui_MainWindow(object):
         self.menuMenu.setTitle(_translate("MainWindow", "Menu"))
         self.actionOpen.setText(_translate("MainWindow", "Open"))
         #self.actionSave.setText(_translate("MainWindow", "Save"))
-        self.actionFitting_param.setText(_translate("MainWindow", "Fitting Func Config"))
+        self.actionFitting_param.setText(_translate("MainWindow", "Param Config"))
         self.actionCalc.setText(_translate("MainWindow", "Calc"))
         #self.actionPooling.setText(_translate("MainWindow", "Pooling"))
 
